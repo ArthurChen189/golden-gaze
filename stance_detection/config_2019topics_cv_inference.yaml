@@ -8,7 +8,7 @@ evaluation: pre_defined_topic_split        # [cross_validation, training_only] a
 
 # Dataset
 dataset_path: ../data/2019qrels_docs_balanced.csv
-inference_dataset_prefix: ../initial_retrieval/output/2019/
+inference_dataset_prefix: ../initial_retrieval/output/2019
 inference_save_dir:  2019topics_cv_inference
 
 # Model

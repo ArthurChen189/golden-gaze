@@ -8,7 +8,7 @@ evaluation: go_through        # [cross_validation, training_only] applicable whe
 
 # Dataset
 dataset_path: ../data/2019qrels_docs_balanced.csv
-inference_dataset_prefix: ../initial_retrieval/output/2021/
+inference_dataset_prefix: ../initial_retrieval/output/2021
 inference_save_dir:  2021topics_inference
 
 # Model
