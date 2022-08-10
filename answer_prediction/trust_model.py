@@ -6,7 +6,8 @@ from pathlib import Path
 from urllib.parse import urlparse
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import classification_report, roc_curve, auc
-
+import xgboost as xgb
+from sklearn.model_selection import GridSearchCV
 
 # Set global variables
 parser = argparse.ArgumentParser()
@@ -68,18 +69,40 @@ def run(training_dataset, test_dataset, fold):
     test_X = get_features(test_dataset, test_topics, training_domains_dict)
     test_y = test_answers
 
-    model = LogisticRegression(penalty='none')
-    model.fit(training_X, training_y)
+    # here we use xgboost to replace the linear layer
+    # param_grid = {
+    #     "n_estimators": [50,60,70],
+    #     "max_depth": [12,15,20],
+    #     "gamma": [0, 0.25, 0.5],
+    #     "scale_pos_weight": [1, 3, 5],
+    # }
+
+    # model = xgb.XGBClassifier(objective="binary:logistic")
+    # grid_cv = GridSearchCV(model, param_grid, n_jobs=-1, cv=3, scoring="accuracy")
+    # _ = grid_cv.fit(training_X, training_y)
+    # print(grid_cv.best_score_)
+    # print(grid_cv.best_params_)
+    # model.fit(training_X,training_y)
+    # print(model)
+
+    # here we use the best params obtained by the above grid search
+    best_params = {'gamma': 0, 'max_depth': 15, 'n_estimators': 70, 'reg_lambda': 0, 'scale_pos_weight': 5}
+    model = xgb.XGBClassifier(objective="binary:logistic", **best_params)
+    model.fit(training_X,training_y)
+
+    # code for Logistic Regression
+    # model = LogisticRegression(penalty='none')
+    # model.fit(training_X, training_y)
+    # model_weights = pd.DataFrame(
+    #     {'domains': [training_domains_dict_reversed[i] for i in range(len(training_domains_dict_reversed))],
+    #      'helpful_weights': model.coef_[0][:len(training_domains_dict)]})
+    # if args.topics == '2019':
+    #     model_weights.to_csv(f'output/2019_LR_weights_fold{fold}.csv', index=False)
+    # elif args.topics == '2021':
+    #     model_weights.to_csv('output/2021_LR_weights.csv', index=False)
+
     output_dir = Path('./output')
     output_dir.mkdir(parents=True, exist_ok=True)
-    model_weights = pd.DataFrame(
-        {'domains': [training_domains_dict_reversed[i] for i in range(len(training_domains_dict_reversed))],
-         'helpful_weights': model.coef_[0][:len(training_domains_dict)]})
-    if args.topics == '2019':
-        model_weights.to_csv(f'output/2019_LR_weights_fold{fold}.csv', index=False)
-    elif args.topics == '2021':
-        model_weights.to_csv('output/2021_LR_weights.csv', index=False)
-
     test_probability = model.predict_proba(test_X)[:, 1]
     test_prediction = model.predict(test_X)
 
