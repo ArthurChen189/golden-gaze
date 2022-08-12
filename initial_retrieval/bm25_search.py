@@ -9,7 +9,7 @@ from pyserini.search import SimpleSearcher
 
 # Set global variables
 parser = argparse.ArgumentParser()
-parser.add_argument('-T', '--topic_set', help='Topic Set', choices=['2019', '2021', 'WH'], required=True)
+parser.add_argument('-T', '--topic_set', help='Topic Set', choices=['2019', '2021', '2022','WH'], required=True)
 # parser.add_argument('-t', '--topic_id', help='Topic ID', required=True)
 parser.add_argument('-i', '--index_path', help='Path to the index', required=True)
 args = parser.parse_args()
@@ -37,6 +37,14 @@ elif args.topic_set == '2021':
     topics = pd.DataFrame(xml_data,
                           columns=['topic_id', 'query', 'description', 'narrative', 'correct_stance', 'evidence'])
     topic_ids = [i for i in range(101,151)]
+elif args.topic_set == '2022':
+    xml_root = et.parse('../data/raw_data/misinfo-2022-topics.xml')
+    rows = xml_root.findall('topic')
+    xml_data = [[int(row.find('number').text), row.find('question').text, "dummy description",
+                 "dummy narrative", "dummy stance", "dummy evidence"] for row in rows]
+    topics = pd.DataFrame(xml_data,
+                          columns=['topic_id', 'query', 'description', 'narrative', 'correct_stance', 'evidence'])
+    topic_ids = [i for i in range(151,200)]
 
 elif args.topic_set == 'WH':
     k = 100  # Only the top 100 documents are needed
