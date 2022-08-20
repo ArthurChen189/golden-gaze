@@ -11,9 +11,9 @@ from sklearn.model_selection import GridSearchCV
 
 # Set global variables
 parser = argparse.ArgumentParser()
-parser.add_argument('-t', '--topics', help='topic set', choices=['2019', '2021'], required=True)
+parser.add_argument('-t', '--topics', help='topic set', choices=['2019', '2021', '2022'], required=True)
 args = parser.parse_args()
-top_k = 100  # For each topic, only top k documents retrieved by BM25 will be used.
+top_k = 10000  # For each topic, only top k documents retrieved by BM25 will be used.
 with open('../data/2019topics_split.json', 'r') as file:
     cross_validation_split_2019 = json.load(file)
 
@@ -61,14 +61,12 @@ def run(training_dataset, test_dataset, fold):
         1 if test_dataset[test_dataset['topic_id'] == topic].head(1)['correct_stance'].values[0] == 'helpful' else 0
         for topic in test_topics]
     test_answers = np.array(test_answers, dtype='int')
-
     training_domains = set(training_dataset['hostname'])
     training_domains_dict, training_domains_dict_reversed = get_mapping_dict(training_domains)
     training_X = get_features(training_dataset, training_topics, training_domains_dict)
     training_y = training_answers
     test_X = get_features(test_dataset, test_topics, training_domains_dict)
     test_y = test_answers
-
     # here we use xgboost to replace the linear layer
     # param_grid = {
     #     "n_estimators": [50,60,70],
@@ -86,20 +84,22 @@ def run(training_dataset, test_dataset, fold):
     # print(model)
 
     # here we use the best params obtained by the above grid search
-    best_params = {'gamma': 0, 'max_depth': 15, 'n_estimators': 70, 'reg_lambda': 0, 'scale_pos_weight': 5}
-    model = xgb.XGBClassifier(objective="binary:logistic", **best_params)
-    model.fit(training_X,training_y)
+    # best_params = {'gamma': 0, 'max_depth': 15, 'n_estimators': 70, 'reg_lambda': 0, 'scale_pos_weight': 5}
+    # model = xgb.XGBClassifier(objective="binary:logistic", **best_params)
+    # model.fit(training_X,training_y)
 
     # code for Logistic Regression
-    # model = LogisticRegression(penalty='none')
-    # model.fit(training_X, training_y)
-    # model_weights = pd.DataFrame(
-    #     {'domains': [training_domains_dict_reversed[i] for i in range(len(training_domains_dict_reversed))],
-    #      'helpful_weights': model.coef_[0][:len(training_domains_dict)]})
-    # if args.topics == '2019':
-    #     model_weights.to_csv(f'output/2019_LR_weights_fold{fold}.csv', index=False)
-    # elif args.topics == '2021':
-    #     model_weights.to_csv('output/2021_LR_weights.csv', index=False)
+    model = LogisticRegression(penalty='none')
+    model.fit(training_X, training_y)
+    model_weights = pd.DataFrame(
+        {'domains': [training_domains_dict_reversed[i] for i in range(len(training_domains_dict_reversed))],
+         'helpful_weights': model.coef_[0][:len(training_domains_dict)]})
+    if args.topics == '2019':
+        model_weights.to_csv(f'output/2019_LR_weights_fold{fold}.csv', index=False)
+    elif args.topics == '2021':
+        model_weights.to_csv('output/2021_LR_weights.csv', index=False)
+    elif args.topics == '2022':
+        model_weights.to_csv('output/2022_LR_weights.csv', index=False)
 
     output_dir = Path('./output')
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -236,3 +236,37 @@ elif args.topics == '2021':
     print(f'FPR: {evaluation_results[1]}')
     print(f'Accuracy: {evaluation_results[2]}')
     print(f'AUC: {evaluation_results[3]}')
+
+elif args.topics == '2022':
+    training_dataset = []
+    for topic in range(90):
+        file_path = f'../stance_detection/output/WHtopics_inference/{topic}.csv'
+        dataframe = pd.read_csv(file_path)
+        dataframe.sort_values(['bm25_score'], ascending=False, inplace=True)
+        dataframe = dataframe.head(top_k)
+        training_dataset.append(dataframe)
+    training_dataset = pd.concat(training_dataset, axis=0)
+
+    test_dataset = []
+    for topic in range(151, 201):
+        file_path = f'../stance_detection/output/2022topics_inference_topk=10k/{topic}.csv'
+        dataframe = pd.read_csv(file_path)
+        dataframe.sort_values(['bm25_score'], ascending=False, inplace=True)
+        dataframe = dataframe.head(top_k)
+        test_dataset.append(dataframe)
+    test_dataset = pd.concat(test_dataset, axis=0)
+    test_topics, test_prediction, test_probability, test_y = run(training_dataset, test_dataset, -1)
+    records = pd.DataFrame([[test_topics[i], test_prediction[i], test_probability[i], test_y[i]]
+                            for i in range(len(test_topics))],
+                           columns=['topic_id', 'predicted_stance', 'prediction_prob', 'correct_stance'])
+    records.to_csv('output/2022_stance_prediction.csv', index=False)
+
+    # print('*-' * 12)
+    # print(f'* Overall Performance *')
+    # print('*-' * 12)
+    # print(classification_report(test_y, test_prediction, zero_division=1))
+    # evaluation_results = evaluate(records)
+    # print(f'TPR: {evaluation_results[0]}')
+    # print(f'FPR: {evaluation_results[1]}')
+    # print(f'Accuracy: {evaluation_results[2]}')
+    # print(f'AUC: {evaluation_results[3]}')

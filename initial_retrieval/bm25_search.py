@@ -13,7 +13,7 @@ parser.add_argument('-T', '--topic_set', help='Topic Set', choices=['2019', '202
 # parser.add_argument('-t', '--topic_id', help='Topic ID', required=True)
 parser.add_argument('-i', '--index_path', help='Path to the index', required=True)
 args = parser.parse_args()
-k = 3000  # Retrieve top k documents per topic
+k = 10000  # Retrieve top k documents per topic
 topic_ids = [];
 
 # Load topics
