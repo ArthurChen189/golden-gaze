@@ -7,7 +7,7 @@ evaluation: training_only     # [cross_validation, training_only] applicable whe
                               # [go_through, pre_defined_topic_split] applicable when mode == inference
 
 # Dataset
-dataset_path: ../data/2021_2019qrels_docs_balanced.csv.csv
+dataset_path: ../data/2021_2019qrels_docs_balanced.csv
 inference_dataset_prefix: none
 inference_save_dir: none
 
