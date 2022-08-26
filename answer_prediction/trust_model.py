@@ -84,22 +84,22 @@ def run(training_dataset, test_dataset, fold):
     # print(model)
 
     # here we use the best params obtained by the above grid search
-    # best_params = {'gamma': 0, 'max_depth': 15, 'n_estimators': 70, 'reg_lambda': 0, 'scale_pos_weight': 5}
-    # model = xgb.XGBClassifier(objective="binary:logistic", **best_params)
-    # model.fit(training_X,training_y)
+    best_params = {'gamma': 0, 'max_depth': 15, 'n_estimators': 70, 'reg_lambda': 0, 'scale_pos_weight': 5}
+    model = xgb.XGBClassifier(objective="binary:logistic", **best_params)
+    model.fit(training_X,training_y)
 
     # code for Logistic Regression
-    model = LogisticRegression(penalty='none')
-    model.fit(training_X, training_y)
-    model_weights = pd.DataFrame(
-        {'domains': [training_domains_dict_reversed[i] for i in range(len(training_domains_dict_reversed))],
-         'helpful_weights': model.coef_[0][:len(training_domains_dict)]})
-    if args.topics == '2019':
-        model_weights.to_csv(f'output/2019_LR_weights_fold{fold}.csv', index=False)
-    elif args.topics == '2021':
-        model_weights.to_csv('output/2021_LR_weights.csv', index=False)
-    elif args.topics == '2022':
-        model_weights.to_csv('output/2022_LR_weights.csv', index=False)
+    # model = LogisticRegression(penalty='none')
+    # model.fit(training_X, training_y)
+    # model_weights = pd.DataFrame(
+    #     {'domains': [training_domains_dict_reversed[i] for i in range(len(training_domains_dict_reversed))],
+    #      'helpful_weights': model.coef_[0][:len(training_domains_dict)]})
+    # if args.topics == '2019':
+    #     model_weights.to_csv(f'output/2019_LR_weights_fold{fold}.csv', index=False)
+    # elif args.topics == '2021':
+    #     model_weights.to_csv('output/2021_LR_weights.csv', index=False)
+    # elif args.topics == '2022':
+    #     model_weights.to_csv('output/2022_LR_weights.csv', index=False)
 
     output_dir = Path('./output')
     output_dir.mkdir(parents=True, exist_ok=True)
